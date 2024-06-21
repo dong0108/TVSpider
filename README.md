@@ -53,6 +53,10 @@ python build.py --aliToken aliToken
 >
 > nodejs 部分只生成代码，需要手动build，区分18+
 
+## 直播源生成
+> 见[jadehh/LiveSpider](https://github.com/jadehh/LiveSpider)
+
+
 ## 遇到的问题
 * 玩偶姐姐播放不了,需要切换VPN节点
 * m3u8遇到跨域的问题可以尝试使用代理来进行加载，如果没有跨域使用代理会引起死循环
@@ -68,7 +72,11 @@ python build.py --aliToken aliToken
 * main分支用于代码测试(不包含任何配置信息)，js分支发布支持quickjs爬虫配置信息，dist分支发布支持nodejs爬虫配置信息
 * 所有的配置信息都通过Github Actions发布，通过创建tag来生成新的配置信息并自动发布
 * fork仓库时去掉仅复制main分支的&#x2714;，这样就可以fork所有的分支了
+  
+## ✨ Star 数
 
+[![Star History Chart](https://api.star-history.com/svg?repos=jadehh/TVSpider&type=Date)](https://star-history.com/#jadehh/TVSpider&Date)
+---
 
 ## 赞助
 如果觉得此项目有用，可以考虑赞助我喝杯咖啡，感谢star❤

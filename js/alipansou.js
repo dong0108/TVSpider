@@ -9,7 +9,7 @@
 
 import {_, load} from "../lib/cat.js";
 import {Spider} from "./spider.js";
-import {detailContent, initAli, playContent} from "../lib/ali.js";
+import { detailContent,initCloud,playContent,getHeaders } from "../lib/cloud.js";
 import {VodDetail, VodShort} from "../lib/vod.js";
 import * as Utils from "../lib/utils.js";
 
@@ -18,11 +18,11 @@ class GitCafeSpider extends Spider {
         super();
         this.siteUrl = "https://www.alipansou.com"
     }
-    getSearchHeader(id) {
+    getHeaders(id) {
         let headers = this.getHeader()
-        headers["Referer"] = id
-        headers["Postman-Token"] = "5f1bb291-ce30-44c7-8885-6db1f3a50785"
-        headers["Host"] = "www.alipansou.com"
+        headers["Referer"] = this.siteUrl + id
+        headers["_bid"] = "6d14a5dd6c07980d9dc089a693805ad8"
+        headers["Cookie"] = "_egg=70463dec0ec843b682ce18c36ec9ce91e"
         return headers
     }
 
@@ -43,11 +43,10 @@ class GitCafeSpider extends Spider {
     }
 
     getHeader() {
-
         return {
             "User-Agent":Utils.CHROME,
-            "Connection": "keep-alive",
-            "Cookie":"_ga=GA1.1.1506025676.1708225506;FCNEC=%5B%5B%22AKsRol9sCpH4JteOAAMprJLQxCHddrtkOFinxqt1cs8x3fKzbBZ5Ll76VvjATz1Ejf6NoayGSONFl2gfn6PbVAG97MlHjhp6cY5NFLQtLIUy0TuzI1_ThHnANe8fW03fHdU2-cx5yM3MftaHt4awEGBWhgtE9H_P5w%3D%3D%22%5D%5D;_cc_id=cc82bd83ea8936df45fe63c887a6f221;mysession=MTcwOTYyMjMxMHxEdi1CQkFFQ180SUFBUkFCRUFBQU1fLUNBQUVHYzNSeWFXNW5EQXdBQ25ObFlYSmphRjlyWlhrR2MzUnlhVzVuREJFQUQtV1JxT1draE9tWnBPUzRpZVd1c3c9PXyjHmLCdFvUlsW_gilBojjCq1ak-ffOud6aZKm3kxzJ4w==;Hm_lvt_02f69e0ba673e328ef49b5fb98dd4601=1708225506,1709622301,1710414091;_bid=28d3966abb8cf873ea912b715552f587;cf_clearance=6LuYs83fWIZlcwwzZkgRyYyFrP6Hndxe_CgByMe.pMs-1710414092-1.0.1.1-V44M.u7MNIozBytYixxp4Qe1OVr.CBH78.IEK2QJTWGQ7.HQBR0DoUgiSfpa23U.nxtOfhkrASpqogvz53knnw;cto_bundle=-WbYyl9VWGZjQkhzZ0gyQjE4VXNlcTJnYTNaV3dMaTdVV0xST3p5RkVnUTNxVWpxYVElMkZtNnVsaWtQSzdQU3JJY0slMkYxc3R5SXdyQlRzbkp1clVNZk84OElTR2MlMkJPeGx0bGtsUHk2VzhGdk1yYyUyRnB5eUNNblhKbWpzcjY1SVI1ODlWRGZXemgzUU51bGF5UWxFNVljcUZpd252bnVZZ1R1d0VXRmJ3S1FXQ1RCMXhVNCUzRA;Hm_lpvt_02f69e0ba673e328ef49b5fb98dd4601=1710416656;_ga_NYNC791BP2=GS1.1.1710414091.2.1.1710416656.0.0.0;_ga_0B2NFC7Z09=GS1.1.1710414091.2.1.1710416656.60.0.0;_egg=16a87a4666714be885e814217b225d50e"}
+            "Connection": "keep-alive"
+        }
     }
 
     async getContentHtml() {
@@ -64,7 +63,7 @@ class GitCafeSpider extends Spider {
     async init(cfg) {
         await this.spiderInit()
         await super.init(cfg);
-        await initAli(this.cfgObj["token"]);
+        await initCloud(this.cfgObj);
     }
 
     async parseClassFromDoc($) {
@@ -93,7 +92,7 @@ class GitCafeSpider extends Spider {
 
     async getAliUrl(id) {
         let url = this.siteUrl + id.replace("/s/", "/cv/")
-        let headers = this.getSearchHeader(url)
+        let headers = this.getHeaders(id)
         let content = await req(url,{postType:"get",headers:headers,redirect:2})
         await this.jadeLog.debug(`回复内容为:${JSON.stringify(content)}`)
         // let url = await this.fetch(this.siteUrl + id.replace("/s/", "/cv/"), null, headers, true)
@@ -107,9 +106,9 @@ class GitCafeSpider extends Spider {
         let ali_url = await this.getAliUrl(obj["id"])
         await this.jadeLog.debug(`阿里分享链接为:${ali_url}`)
         if (!_.isEmpty(ali_url)) {
-            let aliVodDetail = await detailContent([ali_url])
-            vodDetail.vod_play_url = aliVodDetail.vod_play_url
-            vodDetail.vod_play_from = aliVodDetail.vod_play_from
+            let playVod = await detailContent([ali_url],vodDetail.type_name)
+            vodDetail.vod_play_from = _.keys(playVod).join('$$$');
+            vodDetail.vod_play_url = _.values(playVod).join('$$$');
         }
         return vodDetail
     }
@@ -187,8 +186,8 @@ class GitCafeSpider extends Spider {
     }
 
     async setPlay(flag, id, flags) {
-        let playObjStr = await playContent(flag, id, flags);
-        this.playUrl = JSON.parse(playObjStr)["url"]
+        this.playUrl = await playContent(flag, id, flags);
+        this.result.setHeader(getHeaders(flag))
     }
 }
 

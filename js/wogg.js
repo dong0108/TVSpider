@@ -8,7 +8,7 @@
  */
 import {_, load} from '../lib/cat.js';
 import {VodDetail, VodShort} from "../lib/vod.js"
-import {detailContent, initAli, playContent} from "../lib/ali.js";
+import {initCloud, detailContent,playContent,getHeaders} from '../lib/cloud.js';
 import * as Utils from "../lib/utils.js";
 import {Spider} from "./spider.js";
 
@@ -16,15 +16,16 @@ import {Spider} from "./spider.js";
 class WoggSpider extends Spider {
     constructor() {
         super();
-        this.siteUrl = 'https://tvfan.xxooo.cf';
+        this.siteUrl = 'https://www.wogg.net';
         this.woggTypeObj = {"玩偶电影":"电影","玩偶剧集":"电视剧"}
     }
 
     async init(cfg) {
         await super.init(cfg);
-        await initAli(this.cfgObj["token"]);
+        await initCloud(this.cfgObj)
         this.danmuStaus = true
     }
+
 
     getName() {
         return "💂‍┃阿里玩偶┃💂"
@@ -78,22 +79,16 @@ class WoggSpider extends Spider {
         vodDetail.vod_content = $(video_items[4]).find("p")[0].children[0].data
 
         vodDetail.vod_content = vodDetail.vod_content.replace("[收起部分]", "").replace("[展开全部]", "")
-        const share_url_list = [];
+        const share_url_list = []
         let items = $('.module-row-info')
         for (const item of items) {
-            let aliUrl = $(item).find("p")[0].children[0].data
-            let matches = aliUrl.match(Utils.patternAli);
-            if (!_.isEmpty(matches)) share_url_list.push(matches[1])
+            let shareUrl = $(item).find("p")[0].children[0].data
+            share_url_list.push(shareUrl)
         }
-        if (share_url_list.length > 0) {
-            let aliVodDetail = await detailContent(share_url_list,vodDetail.type_name)
-            vodDetail.vod_play_url = aliVodDetail.vod_play_url
-            vodDetail.vod_play_from = aliVodDetail.vod_play_from
-        } else {
-            await this.jadeLog.warning(`获取详情界面失败,失败原因为:没有分享链接`)
-        }
+        let playVod = await detailContent(share_url_list,vodDetail.type_name)
+        vodDetail.vod_play_from = _.keys(playVod).join('$$$');
+        vodDetail.vod_play_url = _.values(playVod).join('$$$');
         return vodDetail
-
     }
 
     async parseVodShortListFromDocBySearch($) {
@@ -104,7 +99,7 @@ class WoggSpider extends Spider {
             vodShort.vod_id = $(item).find(".video-serial")[0].attribs.href;
             vodShort.vod_name = $(item).find(".video-serial")[0].attribs.title;
             vodShort.vod_pic = $(item).find(".module-item-pic > img")[0].attribs['data-src'];
-            vodShort.vod_remarks = '';
+            vodShort.vod_remarks = $($(item).find(".video-serial")[0]).text();
             vod_list.push(vodShort);
         }
         return vod_list
@@ -263,8 +258,8 @@ class WoggSpider extends Spider {
     }
 
     async setPlay(flag, id, flags) {
-        let playObjStr = await playContent(flag, id, flags);
-        this.playUrl = JSON.parse(playObjStr)["url"]
+        this.playUrl = await playContent(flag, id, flags);
+        this.result.setHeader(getHeaders(flag))
     }
 
 

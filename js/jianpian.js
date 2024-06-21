@@ -66,28 +66,15 @@ class JianPianSpider extends Spider {
             let vodShort = new VodShort();
             vodShort.vod_id = data["id"]
             if (data["path"] !== undefined) {
-                if (!this.catOpenStatus) {
-                    vodShort.vod_pic = data["path"] + "@Referer=www.jianpianapp.com@User-Agent=jianpian-version353@JPAUTH=y261ow7kF2dtzlxh1GS9EB8nbTxNmaK/QQIAjctlKiEv"
-                } else {
-                    vodShort.vod_pic = this.jsBase + Utils.base64Encode(data["path"])
-                }
+                vodShort.vod_pic = this.jsBase + Utils.base64Encode(data["path"])
             } else {
-                if (!this.catOpenStatus) {
-                    vodShort.vod_pic = data["thumbnail"] + "@Referer=www.jianpianapp.com@User-Agent=jianpian-version353@JPAUTH=y261ow7kF2dtzlxh1GS9EB8nbTxNmaK/QQIAjctlKiE"
-
-                } else {
-                    vodShort.vod_pic = this.jsBase + Utils.base64Encode(data["thumbnail"])
-                }
+                vodShort.vod_pic = this.jsBase + Utils.base64Encode(data["thumbnail"])
             }
             vodShort.vod_name = data["title"]
-            if (this.catOpenStatus) {
-                vodShort.vod_remarks = `评分:${data["score"]}`
-            } else {
-                if (data["playlist"] !== undefined) {
-                    vodShort.vod_remarks = `评分:${data["score"]}` + " " + data["playlist"]["title"]
-                } else {
-                    vodShort.vod_remarks = `评分:${data["score"]}`
-                }
+            if (data["mask"] !== undefined){
+                vodShort.vod_remarks = data["mask"]
+            }else{
+                vodShort.vod_remarks = data["playlist"]["title"]
             }
             vod_list.push(vodShort)
         }
@@ -107,7 +94,11 @@ class JianPianSpider extends Spider {
         let vodDetail = new VodDetail();
         vodDetail.vod_id = obj["id"]
         vodDetail.vod_year = obj["year"]["title"]
-        vodDetail.vod_pic = this.jsBase + Utils.base64Encode(obj["thumbnail"])
+        if (!this.catOpenStatus) {
+            vodDetail.vod_pic = obj["thumbnail"] + "@Referer=www.jianpianapp.com@User-Agent=jianpian-version353@JPAUTH=y261ow7kF2dtzlxh1GS9EB8nbTxNmaK/QQIAjctlKiEv"
+        } else {
+            vodDetail.vod_pic = this.jsBase + Utils.base64Encode(obj["thumbnail"])
+        }
         vodDetail.type_name = obj["category"][0]["title"]
         vodDetail.vod_name = obj["title"]
         vodDetail.vod_content = obj["description"]
